@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { checkClickedOnEnemy } from './Helpers';
 
 	export let width = 600;
 	export let height = 500;
@@ -10,10 +11,16 @@
 	let imagePosition = { x: 0, y: 0 };
 	let imagePosition2 = { x: 0, y: 30 };
 
+	let activeEnemies: Array<EnemyItem> = [];
+
 	onMount(() => {
 		context = canvas.getContext('2d');
 		canvas.addEventListener('click', (e) => {
-			console.log(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+			const clickPos: ClickedPosition = {
+				xPos: e.clientX - canvas.offsetLeft,
+				yPos: e.clientY - canvas.offsetTop
+			};
+			checkClickedOnEnemy(clickPos, activeEnemies);
 		});
 	});
 
@@ -33,9 +40,10 @@
 	// };
 
 	let lastFrame = performance.now();
+	let direction = 'right';
 
 	function draw() {
-		let direction = 'right';
+		activeEnemies = [];
 		const delta = Math.min(1, Math.max(0, (performance.now() - lastFrame) / 1000));
 		lastFrame = performance.now();
 		context?.clearRect(0, 0, canvas.width, canvas.height);
@@ -43,14 +51,28 @@
 		if (direction === 'right') {
 			imagePosition.x += delta * 50;
 			context?.drawImage(peepoImage, imagePosition.x, imagePosition.y);
-			if (canvas?.width / 2 < imagePosition.x) {
+			activeEnemies.push({
+				enemy: peepoImage,
+				position: {
+					x: imagePosition.x,
+					y: imagePosition.y
+				}
+			});
+			if (canvas?.width / 2 - peepoImage.width < imagePosition.x) {
 				direction = 'left';
 			}
 		}
 		if (direction === 'left') {
-			imagePosition.x -= delta * 50;
+			imagePosition.x += delta * -50;
 			context?.drawImage(peepoImage, imagePosition.x, imagePosition.y);
-			if (canvas?.width / 2 > imagePosition.x) {
+			activeEnemies.push({
+				enemy: peepoImage,
+				position: {
+					x: imagePosition.x,
+					y: imagePosition.y
+				}
+			});
+			if (imagePosition.x < 0) {
 				direction = 'right';
 			}
 		}
